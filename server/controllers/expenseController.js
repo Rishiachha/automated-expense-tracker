@@ -18,7 +18,7 @@ exports.addExpense = async (req, res) => {
         // --- AI CALL START ---
         try {
             // Calling the Python FastAPI service on port 8000
-            const aiResponse = await axios.post('http://127.0.0.1:8000/predict', { 
+            const aiResponse = await axios.post('https://automated-expense-tracker-7.onrender.com/', { 
                 title: title 
             });
             category = aiResponse.data.category;
