@@ -18,10 +18,15 @@ exports.addExpense = async (req, res) => {
         // --- AI CALL START ---
         try {
             // Calling the Python FastAPI service on port 8000
-            const aiResponse = await axios.post('https://automated-expense-tracker-7.onrender.com/', { 
-                title: eq.body.title },
-                { timeout: 3000 } 
-            });
+           const aiResponse = await axios.post(
+    'https://automated-expense-tracker-7.onrender.com/predict',
+    {
+        title: title
+    },
+    {
+        timeout: 3000
+    }
+);
             category = aiResponse.data.category;
             console.log(`AI Result: ${title} -> ${category}`);
         } catch (error) {
