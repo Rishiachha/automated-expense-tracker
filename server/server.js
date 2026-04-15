@@ -13,12 +13,13 @@ const app = express();
 // 1. GLOBAL MIDDLEWARE
 // =========================
 app.use(helmet());
+
 app.use(cors({
-    origin: '*', // ⚠️ For production you can restrict this later
+    origin: '*', // ⚠️ Restrict later in production
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 
 // =========================
 // 2. ROUTES
@@ -26,17 +27,20 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expenseRoutes);
 
+// ✅ ADD THIS (health check route)
+app.get('/test', (req, res) => {
+    res.send('API Running');
+});
 
 // =========================
-// 3. DATABASE CONNECTION (FIXED)
+// 3. DATABASE CONNECTION
 // =========================
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('✅ Connected to MongoDB Atlas'))
     .catch(err => {
         console.error('❌ MongoDB Connection Error:', err.message);
-        process.exit(1); // Stop server if DB fails
+        process.exit(1);
     });
-
 
 // =========================
 // 4. SERVER START
@@ -47,13 +51,12 @@ const server = app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });
 
-
 // =========================
 // 5. ERROR HANDLING
 // =========================
 
 // Catch unhandled promise rejections
-process.on('unhandledRejection', (err, promise) => {
+process.on('unhandledRejection', (err) => {
     console.error('❌ Unhandled Rejection:', err.message);
     server.close(() => process.exit(1));
 });
