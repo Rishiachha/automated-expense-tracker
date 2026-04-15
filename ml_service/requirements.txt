@@ -1,7 +1,8 @@
-flask
+fastapi
+pydantic
+uvicorn
 pandas
 scikit-learn
 numpy
 pytesseract
 pillow
-uvicorn
