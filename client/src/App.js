@@ -1,65 +1,49 @@
-import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, AuthContext } from './context/AuthContext';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
 
-// Named Export 1
-export const AuthContext = createContext();
-
-// Named Export 2
-export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    const API_URL = 'https://automated-expense-tracker-10.onrender.com/api/auth';
-
-    useEffect(() => {
-        const loadUser = async () => {
-            const token = localStorage.getItem('token');
-            if (token) {
-                try {
-                    const res = await axios.get(`${API_URL}/me`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
-                    setUser(res.data);
-                } catch (err) {
-                    console.error("Session expired or invalid token");
-                    localStorage.removeItem('token');
-                }
-            }
-            setLoading(false);
-        };
-        loadUser();
-    }, []);
-
-    const login = async (email, password) => {
-        try {
-            const res = await axios.post(`${API_URL}/login`, { email, password });
-            localStorage.setItem('token', res.data.token);
-            setUser(res.data.user);
-        } catch (err) {
-            throw err;
-        }
-    };
-
-    const register = async (name, email, password) => {
-        try {
-            const res = await axios.post(`${API_URL}/register`, { name, email, password });
-            localStorage.setItem('token', res.data.token);
-            setUser(res.data.user);
-        } catch (err) {
-            throw err;
-        }
-    };
-
-    const logout = () => {
-        localStorage.removeItem('token');
-        setUser(null);
-    };
-
-    return (
-        <AuthContext.Provider value={{ user, setUser, login, register, logout, loading }}>
-            {children}
-        </AuthContext.Provider>
-    );
+// This component checks if a user is logged in before allowing access to the Dashboard
+const ProtectedRoute = ({ children }) => {
+    const { user, loading } = React.useContext(AuthContext);
+    
+    // While checking for a valid token in localStorage, show a loading state
+    if (loading) {
+        return <div className="flex justify-center mt-20">Loading...</div>;
+    }
+    
+    // If the user state is set, render the Dashboard; otherwise, send them to login
+    return user ? children : <Navigate to="/login" />;
 };
 
-// IMPORTANT: Ensure there is NO "export default AuthProvider" at the bottom
+function App() {
+    return (
+        <AuthProvider>
+            <Router>
+                <Routes>
+                    {/* Public Routes */}
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+
+                    {/* Protected Routes */}
+                    <Route 
+                        path="/dashboard" 
+                        element={
+                            <ProtectedRoute>
+                                <Dashboard />
+                            </ProtectedRoute>
+                        } 
+                    />
+
+                    {/* If the user types a URL that doesn't exist, send them to login */}
+                    <Route path="*" element={<Navigate to="/login" />} />
+                </Routes>
+            </Router>
+        </AuthProvider>
+    );
+}
+
+// CRITICAL: Vercel needs this default export to find your App component
+export default App;
