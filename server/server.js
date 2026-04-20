@@ -16,6 +16,7 @@ app.use(helmet());
 
 app.use(cors({
     origin: '*', // ⚠️ Restrict later in production
+    credentials: true
 }));
 
 app.use(express.json());
