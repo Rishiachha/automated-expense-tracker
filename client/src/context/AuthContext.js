@@ -3,31 +3,50 @@ import axios from 'axios';
 
 export const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
+const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    // Ensure this matches your backend route structure exactly
+    const API_URL = 'https://automated-expense-tracker-10.onrender.com/api/auth';
+
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            // In a real app, you'd verify the token with an API call here
-            setUser({ token }); 
-        }
-        setLoading(false);
+        const loadUser = async () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    const res = await axios.get(`${API_URL}/me`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    setUser(res.data);
+                } catch (err) {
+                    console.error("Session expired or invalid token");
+                    localStorage.removeItem('token');
+                }
+            }
+            setLoading(false);
+        };
+        loadUser();
     }, []);
 
     const login = async (email, password) => {
-        const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
-        localStorage.setItem('token', res.data.token);
-        setUser(res.data.user);
-        return res.data;
+        try {
+            const res = await axios.post(`${API_URL}/login`, { email, password });
+            localStorage.setItem('token', res.data.token);
+            setUser(res.data.user);
+        } catch (err) {
+            throw err;
+        }
     };
 
     const register = async (name, email, password) => {
-        const res = await axios.post('http://localhost:5000/api/auth/register', { name, email, password });
-        localStorage.setItem('token', res.data.token);
-        setUser(res.data.user);
-        return res.data;
+        try {
+            const res = await axios.post(`${API_URL}/register`, { name, email, password });
+            localStorage.setItem('token', res.data.token);
+            setUser(res.data.user);
+        } catch (err) {
+            throw err;
+        }
     };
 
     const logout = () => {
@@ -36,8 +55,10 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+        <AuthContext.Provider value={{ user, setUser, login, register, logout, loading }}>
             {children}
         </AuthContext.Provider>
     );
 };
+
+export default AuthProvider;
