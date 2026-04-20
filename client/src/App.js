@@ -1,33 +1,65 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, AuthContext } from './context/AuthContext';
-import Login from './pages/Login';
-import Register from './pages/Register'; // Import this
-import Dashboard from './pages/Dashboard';
+import React, { createContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
-const ProtectedRoute = ({ children }) => {
-    const { user, loading } = React.useContext(AuthContext);
-    if (loading) return <div className="flex justify-center mt-20">Loading...</div>;
-    return user ? children : <Navigate to="/login" />;
+// Named Export 1
+export const AuthContext = createContext();
+
+// Named Export 2
+export const AuthProvider = ({ children }) => {
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    const API_URL = 'https://automated-expense-tracker-10.onrender.com/api/auth';
+
+    useEffect(() => {
+        const loadUser = async () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    const res = await axios.get(`${API_URL}/me`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    setUser(res.data);
+                } catch (err) {
+                    console.error("Session expired or invalid token");
+                    localStorage.removeItem('token');
+                }
+            }
+            setLoading(false);
+        };
+        loadUser();
+    }, []);
+
+    const login = async (email, password) => {
+        try {
+            const res = await axios.post(`${API_URL}/login`, { email, password });
+            localStorage.setItem('token', res.data.token);
+            setUser(res.data.user);
+        } catch (err) {
+            throw err;
+        }
+    };
+
+    const register = async (name, email, password) => {
+        try {
+            const res = await axios.post(`${API_URL}/register`, { name, email, password });
+            localStorage.setItem('token', res.data.token);
+            setUser(res.data.user);
+        } catch (err) {
+            throw err;
+        }
+    };
+
+    const logout = () => {
+        localStorage.removeItem('token');
+        setUser(null);
+    };
+
+    return (
+        <AuthContext.Provider value={{ user, setUser, login, register, logout, loading }}>
+            {children}
+        </AuthContext.Provider>
+    );
 };
 
-function App() {
-    return (
-        <AuthProvider>
-            <Router>
-                <Routes>
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} /> {/* Add this */}
-                    <Route path="/dashboard" element={
-                        <ProtectedRoute>
-                            <Dashboard />
-                        </ProtectedRoute>
-                    } />
-                    <Route path="*" element={<Navigate to="/login" />} />
-                </Routes>
-            </Router>
-        </AuthProvider>
-    );
-}
-
-export default App;
+// IMPORTANT: Ensure there is NO "export default AuthProvider" at the bottom

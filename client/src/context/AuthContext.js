@@ -3,11 +3,11 @@ import axios from 'axios';
 
 export const AuthContext = createContext();
 
-const AuthProvider = ({ children }) => {
+// Add 'export' directly to the function definition
+export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Ensure this matches your backend route structure exactly
     const API_URL = 'https://automated-expense-tracker-10.onrender.com/api/auth';
 
     useEffect(() => {
@@ -61,4 +61,4 @@ const AuthProvider = ({ children }) => {
     );
 };
 
-export default AuthProvider;
+// Remove 'export default AuthProvider' from the bottom
